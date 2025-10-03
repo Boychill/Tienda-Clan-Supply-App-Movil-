@@ -1,0 +1,22 @@
+server:
+  port: 8087
+
+spring:
+  application.name: auth-service
+  profiles.active: dev
+  jpa.open-in-view: false
+
+security:
+  jwt:
+    issuer: "tienda-auth"
+    access-token-minutes: 30
+    refresh-token-days: 7
+    hmac-secret-base64: "WMP6RPByoXPwyxhcKAClsVKg+tIUdG0cKNLmyopfNt0="
+
+eureka:
+  client.service-url.defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.uuid}
+
+management.endpoints.web.exposure.include: health,info

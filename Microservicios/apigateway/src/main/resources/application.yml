@@ -1,0 +1,78 @@
+server:
+  port: 8080
+  compression:
+    enabled: true
+
+spring:
+  application:
+    name: apigateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true         # permite lb://<serviceId> desde Eureka
+          lower-case-service-id: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      httpclient:
+        connect-timeout: 5000   # ms
+        response-timeout: 10s
+
+      # Rutas explícitas (además del locator). Ajusta paths/IDs según tus servicios:
+      routes:
+        # ---- Catálogo ----
+        - id: catalog-route
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/catalog/**         # lo que expone el gateway
+          filters:
+            - StripPrefix=2                # /api/catalog/products -> /products
+
+        # ---- Pedidos ----
+        - id: order-route
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**          # /api/orders/**
+          filters:
+            - StripPrefix=2
+
+        # ---- Inventario ----
+        - id: inventory-route
+          uri: lb://inventory-service
+          predicates:
+            - Path=/api/inventory/**       # /api/inventory/**
+          filters:
+            - StripPrefix=2
+            # Ejemplo Circuit Breaker (requiere starter de resilience4j):
+            - name: CircuitBreaker
+              args:
+                name: inv-cb
+                fallbackUri: forward:/__fallback/inventory
+
+      # CORS global (para frontend web; tu app Android no lo necesita)
+      globalcors:
+        corsConfigurations:
+          "[/**]":
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+security:
+  jwt:
+    hmac-secret-base64: "WMP6RPByoXPwyxhcKAClsVKg+tIUdG0cKNLmyopfNt0="
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.uuid}
+
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health.show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO   # cambia a DEBUG si quieres ver el ruteo en detalle
