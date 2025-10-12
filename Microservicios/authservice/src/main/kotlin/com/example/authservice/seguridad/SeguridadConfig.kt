@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
 
-@Configuration
+@configuration
 @EnableMethodSecurity
 class SecurityConfig(
   private val uds: UserDetailsServiceImpl,
